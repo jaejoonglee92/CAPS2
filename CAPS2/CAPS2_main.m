@@ -299,7 +299,7 @@ fontsize = 33;
 Screen('Preference', 'TextEncodingLocale', 'ko_KR.UTF-8');
 
 % color
-bgcolor = 100;
+bgcolor = 50;
 white = 255;
 red = [158 1 66];
 orange = [255 164 0];
@@ -346,18 +346,26 @@ if doexplain_scale
     % Going through each scale
     for scale_i = 1:numel(exp_scale)
         
+        joy_button(1) = 0;
+        button(1) = 0;
+        exptime = Inf;
+        
         % First introduction
         if scale_i == 1
-            while true % Space
+            while true % Button
                 DrawFormattedText(theWindow, rating_types.prompts_ex{1}, 'center', 100, white, [], [], [], 2);
                 Screen('Flip', theWindow);
                 
-                [~,~,button] = GetMouse(theWindow);
+                if strcmp(controller, 'joy')
+                    [~, joy_button] = mat_joy(0);
+                elseif strcmp(controller, 'mouse')
+                    [~,~,button] = GetMouse(theWindow);
+                end
                 [~,~,keyCode_E] = KbCheck(Exp_key);
                 
-                if button(1) || keyCode_E(KbName('space'))
-                    break
-                elseif keyCode_E(KbName('q'))
+                if joy_button(1) || button(1); break; end
+                
+                if keyCode_E(KbName('q'))
                     abort_experiment('manual');
                     break
                 end
@@ -371,15 +379,8 @@ if doexplain_scale
         
         [lb, rb, start_center] = draw_scale(scale); % Get information about scale.
         Screen(theWindow, 'FillRect', bgcolor, window_rect); % Just getting information, and do not show the scale.
-        
-        start_t = GetSecs;
-        Screen(theWindow,'FillRect',bgcolor, window_rect);
-        Screen('Flip', theWindow);
-        
-        rec_i = 0;
+
         ratetype = strcmp(rating_types.alltypes, scale);
-        joy_button(1) = 0;
-        button(1) = 0;
         
         % Explain scale with visualization
         while true % Space
@@ -388,12 +389,11 @@ if doexplain_scale
             DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 300, white, [], [], [], 1);
             Screen('Flip', theWindow);
             
-            [~,~,button] = GetMouse(theWindow);
             [~,~,keyCode_E] = KbCheck(Exp_key);
             
-            if button(1) || keyCode_E(KbName('space'))
-                break
-            elseif keyCode_E(KbName('q'))
+            if keyCode_E(KbName('space')); break; end
+            
+            if keyCode_E(KbName('q'))
                 abort_experiment('manual');
                 break
             end
@@ -412,15 +412,15 @@ if doexplain_scale
             end
         end
         
+        start_t = GetSecs;
+        
         % Get ratings
         while true % Button
-            rec_i = rec_i+1;
-            
             if strcmp(controller, 'joy')
                 [joy_pos, joy_button] = mat_joy(0);
-                %             if abs(start_joy_pos) > .1 % if start point is too deviated
-                %                 start_joy_pos = joy_pos(1);
-                %             end
+                if abs(start_joy_pos) > .01 % if start point is too deviated
+                    start_joy_pos = joy_pos(1);
+                end
                 if start_center
                     x = (joy_pos(1)-start_joy_pos) ./ controlspeed .* (rb-lb) + (rb+lb)/2; % both direction
                 else
@@ -443,7 +443,7 @@ if doexplain_scale
             
             cur_t = GetSecs;
             
-            if cur_t-start_t >= Inf-0.5
+            if cur_t-start_t >= exptime-0.5
                 break
             end
             
@@ -463,7 +463,7 @@ if doexplain_scale
         end
         
         % (EXPLAIN or POSTRUN) Move to next
-        while true % Space
+        while true % Button
             if strncmp(scale, 'cont_', numel('cont_'))
                 if scale_i < numel(exp_scale)
                     DrawFormattedText(theWindow, [rating_types.prompts_ex{4} '\n\n' ...
@@ -481,12 +481,16 @@ if doexplain_scale
             end
             Screen('Flip', theWindow);
             
-            [~,~,button] = GetMouse(theWindow);
+            if strcmp(controller, 'joy')
+                [~, joy_button] = mat_joy(0);
+            elseif strcmp(controller, 'mouse')
+                [~,~,button] = GetMouse(theWindow);
+            end
             [~,~,keyCode_E] = KbCheck(Exp_key);
             
-            if button(1) || keyCode_E(KbName('space'))
-                break
-            elseif keyCode_E(KbName('q'))
+            if joy_button(1) || button(1); break; end
+            
+            if keyCode_E(KbName('q'))
                 abort_experiment('manual');
                 break
             end
@@ -521,7 +525,7 @@ for run_i = run_start:run_num
         if numel(trial_sequence{run_i}{tr_i}) > 8 % if there were some pictures of texts for stimulation
             S.stimtext = trial_sequence{run_i}{tr_i}{9};
         else
-            S.stimtext = ' ';
+            S.stimtext = '+';
         end
         
         data.dat{run_i}{tr_i}.type = S.type;
@@ -537,7 +541,7 @@ for run_i = run_start:run_num
         
         S.ratetime_cont = str2double(S.dur) + post_stimulus_t; % collect data for duration + post stimulus time
         S.ratetime_overall = 7;
-        S.ratetime_post = 7;
+        S.ratetime_post = Inf;
         
         %% Check for ready
         if run_i == 1 && tr_i == 1
@@ -692,7 +696,6 @@ for run_i = run_start:run_num
             joy_button(1) = 0;
             button(1) = 0;
             
-            
             % Initial position
             if strcmp(controller, 'joy')
                 [joy_pos, joy_button] = mat_joy(0);
@@ -764,6 +767,7 @@ for run_i = run_start:run_num
         
         %% POST-STIM JITTER
         Screen('FillRect', theWindow, bgcolor, window_rect); % clear the screen
+        DrawFormattedText(theWindow, S.stimtext, 'center', 'center', white, [], [], [], 2);
         Screen('Flip', theWindow);
         WaitSecs(S.post_stim_jitter);
         
@@ -863,8 +867,10 @@ for run_i = run_start:run_num
         end
         
         %% INTER-TRIAL INTERVAL
-        Screen('FillRect', theWindow, bgcolor, window_rect); % basically, clear the screen
+        Screen('FillRect', theWindow, bgcolor, window_rect); % clear the screen
+        DrawFormattedText(theWindow, S.stimtext, 'center', 'center', white, [], [], [], 2);
         Screen('Flip', theWindow);
+        
         if ~isempty(S.overall_scale)
             data.dat{run_i}{tr_i}.iti = data.dat{run_i}{tr_i}.isi - data.dat{run_i}{tr_i}.overall_total_RT;
         else

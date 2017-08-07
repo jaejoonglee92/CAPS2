@@ -2,10 +2,10 @@ function [ts, post_q] = generate_ts
 
 % basic setting for paradigm
 run_num = 1; %4
-trial_num = repmat(21, run_num, 1); %21
-S1{1} = [{'ODOR'}]; % {'REST'}, {'CAPS'}, {'QUIN'}, 
+trial_num = repmat(3, run_num, 1); %21
+S1{1} = [{'REST'}]; % {'ODOR'}, {'CAPS'}, {'QUIN'}, 
 S1{2} = [{'LV1'}];
-S1{3} = [{'0012'}; repmat({'0052'}, 19, 1); {'0022'}]; %12 52 22, 19
+S1{3} = [{'0002'}; repmat({'0002'}, 39, 1); {'0002'}]; %12 52 22, 19
 S1{4} = [{'overall_avoidance'}];
 S1{5} = [{'0'}];
 S1{6} = [{'0'}];

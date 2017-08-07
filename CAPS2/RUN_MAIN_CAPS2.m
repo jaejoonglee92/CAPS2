@@ -15,10 +15,10 @@ data = CAPS2_main(caps2_ts, 'explain_scale', caps2_exp, ...
 
 
 %% for TEST
-
+t
 clear;
 %caps2_scriptdir = 'C:\Users\Cocoanlab_WL01\Downloads\CAPS2\CAPS2-master\CAPS2_revised';
-caps2_scriptdir =  '/Users/jaejoonglee/Documents/github/CAPS2'
+caps2_scriptdir =  '/Users/jaejoonglee/Documents/github/CAPS2';
 cd(caps2_scriptdir); addpath(genpath(caps2_scriptdir));
 
 caps2_exp = {'overall_avoidance'};
