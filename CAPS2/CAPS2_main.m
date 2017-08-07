@@ -91,17 +91,14 @@ function data = CAPS2_main(trial_sequence, varargin)
 % 27/06/2017, J.J. Lee -- overall trimming of the code.
 % 01/07/2017, J.J. Lee -- reconstruction of the code.
 
+%% SETUP : global
 
-%% SETUP: global
-global window_rect W H theWindow; % window property
-global white red orange bgcolor; % color
-global font fontsize
-global Exp_key Par_key Scan_key
+global W H lb1 rb1 lb2 rb2 scale_W space korean alpnum special theWindow; % window property
+global white orange bgcolor; % color
 global t r; % pressure device udp channel
-global rating_types % dictionary for all rating types and matched prompts
+
 
 %% SETUP: varargin
-scriptdir = pwd;
 doexplain_scale = false;
 testmode = false;
 screen_mode = 'small';
@@ -112,14 +109,13 @@ USE_BIOPAC = false;
 postrun_questions = [];
 controller = 'mouse';
 control_speed = 0;
+USE_MASTER9 = false;
 
 
 for i = 1:length(varargin)
     if ischar(varargin{i})
         switch varargin{i}
             % functional commands
-            case {'scriptdir'}
-                scriptdir = varargin{i+1};
             case {'explain_scale'}
                 doexplain_scale = true;
                 exp_scale = varargin{i+1};
@@ -135,7 +131,7 @@ for i = 1:length(varargin)
                 post_stimulus_t = varargin{i+1};
             case {'biopac'}
                 USE_BIOPAC = true;
-                channel_n = 3;
+                channel_n = 1;
                 biopac_channel = 0;
                 ljHandle = BIOPAC_setup(channel_n);
             case {'postrun_questions'}
@@ -144,47 +140,362 @@ for i = 1:length(varargin)
                 controller = varargin{i+1};
             case {'controlspeed'}
                 control_speed = varargin{i+1};
+            case {'master-9'}
+                USE_MASTER9 = true;
         end
     end
 end
 
-cd(scriptdir); addpath(genpath(scriptdir));
-savedir = 'Data';
-
 
 %% SETUP: DATA and Subject INFO
-[fname, SID, start_line, data] = subjectinfo_check(savedir); % subject information check, start line reading
+
+% Basic parameter setting
+savedir = 'Data';
+start_line = 1;
+
+% Get subject ID
+data.subject = input('\nSubject ID? ','s');
+data.datafile = fullfile(savedir, ['s' data.subject '.mat']);
+    
+% Check if the data file exists
+if ~exist(savedir, 'dir')
+    mkdir(savedir);
+else
+    if exist(data.datafile, 'file')
+        checkdat = input(['The Subject ' data.subject ' data file exists. Press a button for the following options.\n', ...
+            '1:Save new file, 2:Save the data from where we left off, Ctrl+C:Abort? ']);
+        
+        if checkdat == 2 % if file exists, get the start line
+            load(data.datafile);
+            datafields = fields(data);
+            for fields_i = 1:numel(datafields)
+                if strcmp(datafields{fields_i}, 'dat') % find whether the dat substructure is exist.
+                    for line_i = 1:numel(data.dat)
+                        start_line = start_line + numel(data.dat{line_i});
+                    end
+                end
+            end
+        end
+        
+    end
+    
+end
+
 % add some information
 data.version = 'CAPS2_v1_07-01-2017_Cocoanlab';
-data.subject = SID;
-data.datafile = fname;
 data.starttime = datestr(clock, 0); % date-time
 data.starttime_getsecs = GetSecs; % in the same format of timestamps for each trial
 save(data.datafile, 'trial_sequence', 'data') % initial save of trial sequence
 
-%% SETUP: Experiment
-[run_num, trial_num, run_start, trial_start] = parse_trial_sequence(trial_sequence, start_line);
-call_ratingtypes; % call rating types dictionary
-lvs = {'LV1', 'LV2', 'LV3', 'LV4'};
+%% SETUP: Parsing data
+
+run_num = numel(trial_sequence);
+idx = zeros(run_num+1,1); % index to calculate trial_start
+trial_num = zeros(run_num,1);
+trial_start = ones(run_num,1);
+
+for run_i = 1:run_num
+    trial_num(run_i) = numel(trial_sequence{run_i});
+    idx(run_i+1) = idx(run_i) + trial_num(run_i);
+    
+    if idx(run_i) < start_line && idx(run_i+1) >= start_line
+        run_start = run_i;
+        trial_start(run_i) = start_line - idx(run_i);
+    end
+    
+end
+
+%% SETUP : Prompts
+rating_types = call_ratingtypes;
 
 %% SETUP: STIMULI -- modify this for each study
-% PP_int = pressure_pain_setup; % pain of each intensity
+
+lvs = {'LV1', 'LV2', 'LV3', 'LV4'};
+
+PP_int = pressure_pain_setup; % pain of each intensity
 % players = auditory_setup; % sound of each aversiveness
 % if isempty(postrun_questions)
 %     for i = 1:run_num, postrun_questions{i} = []; end
 % end
 
+%% SETUP: Master-9
+
+if USE_MASTER9
+    cmOff = 0;
+    cmFree = 1;
+    cmTrain = 2;
+    cmTrig = 3;
+    cmDC = 4;
+    cmGate = 5;
+    cmTwin=6;
+    csMonopolar=0;
+    csBipolar=1;
+    csRamp=2;
+    
+    Master9 = actxserver('AmpiLib.Master9'); %Create COM Automation server
+    
+    if ~(Master9.Connect)
+        h=errordlg('Can''t connect to Master9!','Error');
+        uiwait(h);
+        delete(Master9); %Close COM
+        return;
+    end
+    
+    Master9.ChangeParadigm(1);            %switch to paradigm #1
+    Master9.ClearParadigm;                %clear present paradigm
+    
+    Master9.ChangeChannelMode(1, cmTrig);
+    
+    Master9.SetChannelDuration(1, 10);
+    Master9.SetChannelDelay(1, 0);
+    
+    Master9.ChangeChannelMode(2, cmTrig);
+    
+    Master9.SetChannelDuration(2, 10);
+    Master9.SetChannelDelay(2, 0);
+end
 
 %% SETUP: Screen parameter
-setup_screen(testmode, screen_mode); % setup screen parameter
 
-%% SETUP: Input setting
-setup_input(set_input);
+screens = Screen('Screens');
+if ~testmode
+    window_num = screens(end); % the last window
+    HideCursor;
+elseif testmode
+    window_num = 0;
+    ShowCursor;
+end
+
+Screen('Preference', 'SkipSyncTests', 1);
+
+window_info = Screen('Resolution', window_num);
+switch screen_mode
+    case 'full'
+        window_rect = [0 0 window_info.width window_info.height]; % full screen
+    case 'semifull'
+        window_rect = [0 0 window_info.width-100 window_info.height-100]; % a little bit distance
+    case 'middle'
+        window_rect = [0 0 window_info.width/2 window_info.height/2]; 
+    case 'small'
+        window_rect = [0 0 400 300]; % in the test mode, use a little smaller screen
+end
+
+% size
+W = window_rect(3); % width
+H = window_rect(4); % height
+
+lb1 = W/4; % rating scale left bounds 1/4
+rb1 = (3*W)/4; % rating scale right bounds 3/4
+
+lb2 = W/3; % new bound for or not
+rb2 = (W*2)/3; 
+
+scale_W = (rb1-lb1).*0.1; % Height of the scale (10% of the width)
+
+% font
+fontsize = 33;
+%font = 'Helvetica';
+%font = 'NanumBarunGothic'; 
+Screen('Preference', 'TextEncodingLocale', 'ko_KR.UTF-8');
+
+% color
+bgcolor = 100;
+white = 255;
+red = [158 1 66];
+orange = [255 164 0];
+
+% open window
+theWindow = Screen('OpenWindow', window_num, bgcolor, window_rect); % start the screen
+%Screen('TextFont', theWindow, font);
+Screen('TextSize', theWindow, fontsize);
+
+% get font parameter
+anchor_lms = [0.014 0.061 0.172 0.354 0.533].*(rb1-lb1)+lb1;
+
+[~, ~, wordrect0, ~] = DrawFormattedText(theWindow, double(' '), lb1-30, H/2+scale_W+40, bgcolor);
+[~, ~, wordrect1, ~] = DrawFormattedText(theWindow, double('��'), lb1-30, H/2+scale_W+40, bgcolor);
+[~, ~, wordrect2, ~] = DrawFormattedText(theWindow, double('p'), lb1-30, H/2+scale_W+40, bgcolor);
+[~, ~, wordrect3, ~] = DrawFormattedText(theWindow, double('^'), lb1-30, H/2+scale_W+40, bgcolor);
+[space.x space.y korean.x korean.y alpnum.x alpnum.y special.x special.y] = deal(wordrect0(3)-wordrect0(1), wordrect0(4)-wordrect0(2), ...
+    wordrect1(3)-wordrect1(1), wordrect1(4)-wordrect1(2), wordrect2(3)-wordrect2(1), wordrect2(4)-wordrect2(2), ...
+    wordrect3(3)-wordrect3(1), wordrect3(4)-wordrect3(2));
+
+%% SETUP: Input setting (for Mac and test)
+
+if set_input && ismac 
+    devices = PsychHID('Devices');  
+    devices_keyboard = [];
+    for i = 1:numel(devices)
+        if strcmp(devices(i).usageName, 'Keyboard')
+            devices_keyboard = [devices_keyboard, devices(i)];
+        end
+    end
+    Exp_key = devices_keyboard(2).index; % JJ's mac setting. MODIFY.
+    Par_key = devices_keyboard(2).index;
+    Scan_key = devices_keyboard(2).index;
+else
+    Exp_key = [];
+    Par_key = [];
+    Scan_key = [];
+end
 
 %% MAIN EXPERIMENT
 %% EXPLAIN SCALES
 if doexplain_scale
-    data = get_ratings(exp_scale, 'explain', controller, control_speed, 1, 1, Inf, data);
+    
+    % Going through each scale
+    for scale_i = 1:numel(exp_scale)
+        
+        % First introduction
+        if scale_i == 1
+            while true % Space
+                DrawFormattedText(theWindow, rating_types.prompts_ex{1}, 'center', 100, white, [], [], [], 2);
+                Screen('Flip', theWindow);
+                
+                [~,~,button] = GetMouse(theWindow);
+                [~,~,keyCode_E] = KbCheck(Exp_key);
+                
+                if button(1) || keyCode_E(KbName('space'))
+                    break
+                elseif keyCode_E(KbName('q'))
+                    abort_experiment('manual');
+                    break
+                end
+                
+            end
+        end
+        
+        
+        % Parse scales and basic setting
+        scale = exp_scale{scale_i};
+        
+        [lb, rb, start_center] = draw_scale(scale); % Get information about scale.
+        Screen(theWindow, 'FillRect', bgcolor, window_rect); % Just getting information, and do not show the scale.
+        
+        start_t = GetSecs;
+        Screen(theWindow,'FillRect',bgcolor, window_rect);
+        Screen('Flip', theWindow);
+        
+        rec_i = 0;
+        ratetype = strcmp(rating_types.alltypes, scale);
+        joy_button(1) = 0;
+        button(1) = 0;
+        
+        % Explain scale with visualization
+        while true % Space
+            [lb, rb, start_center] = draw_scale(scale); % draw scale
+            DrawFormattedText(theWindow, rating_types.prompts_ex{2}, 'center', 100, orange, [], [], [], 1);
+            DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 300, white, [], [], [], 1);
+            Screen('Flip', theWindow);
+            
+            [~,~,button] = GetMouse(theWindow);
+            [~,~,keyCode_E] = KbCheck(Exp_key);
+            
+            if button(1) || keyCode_E(KbName('space'))
+                break
+            elseif keyCode_E(KbName('q'))
+                abort_experiment('manual');
+                break
+            end
+            
+        end
+        
+        % Initial position
+        if strcmp(controller, 'joy')
+            [joy_pos, joy_button] = mat_joy(0);
+            start_joy_pos = joy_pos(1); % getting initial poisition
+        elseif strcmp(controller, 'mouse')
+            if start_center
+                SetMouse((rb+lb)/2,H/2); % set mouse at the center
+            else
+                SetMouse(lb,H/2); % set mouse at the left
+            end
+        end
+        
+        % Get ratings
+        while true % Button
+            rec_i = rec_i+1;
+            
+            if strcmp(controller, 'joy')
+                [joy_pos, joy_button] = mat_joy(0);
+                %             if abs(start_joy_pos) > .1 % if start point is too deviated
+                %                 start_joy_pos = joy_pos(1);
+                %             end
+                if start_center
+                    x = (joy_pos(1)-start_joy_pos) ./ controlspeed .* (rb-lb) + (rb+lb)/2; % both direction
+                else
+                    x = (joy_pos(1)-start_joy_pos) ./ controlspeed .* (rb-lb) + lb; % only right direction
+                end
+            elseif strcmp(controller, 'mouse')
+                [x,~,button] = GetMouse(theWindow);
+            end
+            
+            if x < lb; x = lb; elseif x > rb; x = rb; end
+            
+            if joy_button(1) || button(1); break; end
+            
+            DrawFormattedText(theWindow, rating_types.prompts_ex{3}, 'center', 100, orange, [], [], [], 2);
+            DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 300, white, [], [], [], 2);
+            
+            [lb, rb, start_center] = draw_scale(scale);
+            Screen('DrawLine', theWindow, orange, x, H/2, x, H/2+scale_W, 6);
+            Screen('Flip', theWindow);
+            
+            cur_t = GetSecs;
+            
+            if cur_t-start_t >= Inf-0.5
+                break
+            end
+            
+        end
+        
+        % Freeze the screen 0.5 second with red line if overall type
+        freeze_t = GetSecs;
+        while true
+            [lb, rb, start_center] = draw_scale(scale);
+            DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 300, white, [], [], [], 2);
+            Screen('DrawLine', theWindow, red, x, H/2, x, H/2+scale_W, 6);
+            Screen('Flip', theWindow);
+            freeze_cur_t = GetSecs;
+            if freeze_cur_t - freeze_t > 0.5
+                break
+            end
+        end
+        
+        % (EXPLAIN or POSTRUN) Move to next
+        while true % Space
+            if strncmp(scale, 'cont_', numel('cont_'))
+                if scale_i < numel(exp_scale)
+                    DrawFormattedText(theWindow, [rating_types.prompts_ex{4} '\n\n' ...
+                        rating_types.prompts_ex{6}], 'center', 100, orange, [], [], [], 2);
+                else
+                    DrawFormattedText(theWindow, [rating_types.prompts_ex{5} '\n\n' ...
+                        rating_types.prompts_ex{6}], 'center', 100, orange, [], [], [], 2);
+                end
+            elseif strncmp(scale, 'overall_', numel('overall_'))
+                if scale_i < numel(exp_scale)
+                    DrawFormattedText(theWindow, rating_types.prompts_ex{4}, 'center', 100, orange, [], [], [], 1);
+                else
+                    DrawFormattedText(theWindow, rating_types.prompts_ex{5}, 'center', 100, orange, [], [], [], 1);
+                end
+            end
+            Screen('Flip', theWindow);
+            
+            [~,~,button] = GetMouse(theWindow);
+            [~,~,keyCode_E] = KbCheck(Exp_key);
+            
+            if button(1) || keyCode_E(KbName('space'))
+                break
+            elseif keyCode_E(KbName('q'))
+                abort_experiment('manual');
+                break
+            end
+            
+        end
+        
+    end
+    
+    
 end
 
 %% START : RUN
@@ -194,7 +505,36 @@ for run_i = run_start:run_num
     for tr_i = trial_start(run_i):trial_num(run_i)
         
         %% Parse stimulation data
-        [S, data] = parse_trial(trial_sequence, run_i, tr_i, data);
+        S.type = trial_sequence{run_i}{tr_i}{1}; % 'PP', 'TP', 'AU', 'VI'
+        S.int = trial_sequence{run_i}{tr_i}{2};  % 'LV1', 'LV2'...
+        S.dur = str2double(trial_sequence{run_i}{tr_i}{3});  % '0010'...
+        S.cont_scale = trial_sequence{run_i}{tr_i}{4}(strncmp(trial_sequence{run_i}{run_i}{4}, 'cont_', length('cont_')));
+        S.overall_scale = trial_sequence{run_i}{tr_i}{4}(strncmp(trial_sequence{run_i}{tr_i}{4}, 'overall_', length('overall_')));
+        S.cue_t = str2double(trial_sequence{run_i}{tr_i}{5});
+        S.post_stim_jitter = str2double(trial_sequence{run_i}{tr_i}{6});
+        S.isi = str2double(trial_sequence{run_i}{tr_i}{7});
+        if numel(trial_sequence{run_i}{tr_i}) > 7 % if there were some pictures of texts for cue
+            S.cuetext = trial_sequence{run_i}{tr_i}{8};
+        else
+            S.cuetext = ' ';
+        end
+        if numel(trial_sequence{run_i}{tr_i}) > 8 % if there were some pictures of texts for stimulation
+            S.stimtext = trial_sequence{run_i}{tr_i}{9};
+        else
+            S.stimtext = ' ';
+        end
+        
+        data.dat{run_i}{tr_i}.type = S.type;
+        data.dat{run_i}{tr_i}.intensity = S.int;
+        data.dat{run_i}{tr_i}.duration = S.dur;
+        data.dat{run_i}{tr_i}.cont_scale = S.cont_scale;
+        data.dat{run_i}{tr_i}.overall_scale = S.overall_scale;
+        data.dat{run_i}{tr_i}.cue_duration = S.cue_t;
+        data.dat{run_i}{tr_i}.post_stim_jitter = S.post_stim_jitter;
+        data.dat{run_i}{tr_i}.isi = S.isi;
+        data.dat{run_i}{tr_i}.cuetext = S.cuetext;
+        data.dat{run_i}{tr_i}.stimtext = S.stimtext;
+        
         S.ratetime_cont = str2double(S.dur) + post_stimulus_t; % collect data for duration + post stimulus time
         S.ratetime_overall = 7;
         S.ratetime_post = 7;
@@ -210,7 +550,11 @@ for run_i = run_start:run_num
                     break
                 end
                 
-                display_message('start', run_i);
+                Screen(theWindow,'FillRect',bgcolor, window_rect);
+                msgtxt = '�����ڴ� ��� ������ �Ϸ�Ǿ���� Ȯ���Ͻñ� �ٶ�ϴ�.(BIOPAC, PPD, ���...)\n�غ� �Ϸ�Ǹ� �����ڴ� SPACE Ű�� �����ֽñ� �ٶ�ϴ�.';
+                msgtxt = double(msgtxt); % korean to double
+                DrawFormattedText(theWindow, msgtxt, 'center', 'center', white, [], [], [], 2);
+                Screen('Flip', theWindow);
             end
         end
         
@@ -230,7 +574,11 @@ for run_i = run_start:run_num
                         break
                     end
                     
-                    display_message('run_fmri', run_i);
+                    Screen(theWindow,'FillRect',bgcolor, window_rect);
+                    msgtxt = '���ڰ� ��� �غ� �Ϸ�Ǹ� ��ĵ�� �����մϴ�. (S Ű)';
+                    msgtxt = double(msgtxt); % korean to double
+                    DrawFormattedText(theWindow, msgtxt, 'center', 'center', white, [], [], [], 2);
+                    Screen('Flip', theWindow);
                 end
             elseif ~dofmri
                 while true
@@ -242,21 +590,29 @@ for run_i = run_start:run_num
                         abort_experiment('manual');
                         break
                     end
-                    display_message('run_behavior', run_i);
+                    Screen(theWindow,'FillRect',bgcolor, window_rect);
+                    msgtxt = '���ڴ� ��� �غ� �Ϸ�Ǹ� R Ű�� �����ֽñ� �ٶ�ϴ�.';
+                    msgtxt = double(msgtxt); % korean to double
+                    DrawFormattedText(theWindow, msgtxt, 'center', 'center', white, [], [], [], 2);
+                    Screen('Flip', theWindow);
                 end
             end
             
             
             if dofmri
-                % gap between s key push and the first stimuli (disdaqs: 10 seconds)
-                % 4 seconds: "Starting..."
-                display_message('scanstart', run_i);
+                Screen(theWindow,'FillRect',bgcolor, window_rect);
+                msgtxt = '�����ϴ� ��...';
+                msgtxt = double(msgtxt); % korean to double
+                DrawFormattedText(theWindow, msgtxt, 'center', 'center', white, [], [], [], 2);
+                Screen('Flip', theWindow);
+                
                 WaitSecs(4); % ADJUST THIS
                 
                 % 4 seconds: Blank
                 Screen(theWindow,'FillRect',bgcolor, window_rect);
                 Screen('Flip', theWindow);
                 data.dat{run_i}{tr_i}.runscan_starttime = GetSecs;
+                
                 WaitSecs(4); % ADJUST THIS
             end
             
@@ -284,7 +640,7 @@ for run_i = run_start:run_num
             WaitSecs(S.cue_t-.5);
             
             % 0.5 sec with blank
-            Screen(theWindow,'FillRect',bgcolor, window_rect);
+            Screen(theWindow, 'FillRect', bgcolor, window_rect);
             Screen('Flip', theWindow);
             WaitSecs(.5);
         end
@@ -297,15 +653,109 @@ for run_i = run_start:run_num
         
         if strcmp(S.type, 'PP') % pressure pain
             eval(['fwrite(t, ''1,' PP_int{strcmp(lvs, S.int)} ',t'');']);
+            eval(['fwrite(t, ''1,' PP_int{strcmp(lvs, S.int)} ',s'');']);
         elseif strcmp(S.type, 'AU') % aversive auditory
             play(players{strcmp(lvs, S.int)});
+        elseif strcmp(S.type, 'ODOR') % aversive odor
+            eval(['fwrite(t, ''1,' PP_int{strcmp(lvs, S.int)} ',t'');']);
+            if tr_i == 1
+                odordur = 90; % 90 sec
+                totaldur = 20*60; % 20 min
+                Master9.SetChannelDuration(1, odordur);
+                Master9.SetChannelDelay(1, 0);
+                Master9.Trigger(1);
+                Master9.SetChannelDuration(2, totaldur - odordur);
+                Master9.SetChannelDelay(2, odordur);
+                Master9.Trigger(2);
+            end
         end
         
         if ~isempty(S.cont_scale) % continuous rating
-            data = get_ratings(S.cont_scale, 'continuous', controller, control_speed, run_i, tr_i, S.ratetime_cont, data);
+            
+            % Basic setting
+            all_start_t = GetSecs;
+            data.dat{run_i}{tr_i}.continuous_rating_timestamp = all_start_t;
+            
+            % Parse scales and basic setting
+            scale = S.cont_scale;
+            
+            [lb, rb, start_center] = draw_scale(scale); % Get information about scale.
+            Screen(theWindow,'FillRect',bgcolor, window_rect); % Just getting information, and do not show the scale.
+            
+            start_t = GetSecs;
+            eval(['data.dat{run_i}{tr_i}.' scale '_timestamp = start_t;']);
+            Screen(theWindow,'FillRect',bgcolor, window_rect);
+            Screen('Flip', theWindow);
+            
+            rec_i = 0;
+            ratetype = strcmp(rating_types.alltypes, scale);
+            joy_button(1) = 0;
+            button(1) = 0;
+            
+            
+            % Initial position
+            if strcmp(controller, 'joy')
+                [joy_pos, joy_button] = mat_joy(0);
+                start_joy_pos = joy_pos(1); % getting initial poisition
+            elseif strcmp(controller, 'mouse')
+                if start_center
+                    SetMouse((rb+lb)/2,H/2); % set mouse at the center
+                else
+                    SetMouse(lb,H/2); % set mouse at the left
+                end
+            end
+            
+            % Get ratings
+            while true % Button
+                rec_i = rec_i+1;
+                
+                if strcmp(controller, 'joy')
+                    [joy_pos, joy_button] = mat_joy(0);
+                    %             if abs(start_joy_pos) > .1 % if start point is too deviated
+                    %                 start_joy_pos = joy_pos(1);
+                    %             end
+                    if start_center
+                        x = (joy_pos(1)-start_joy_pos) ./ controlspeed .* (rb-lb) + (rb+lb)/2; % both direction
+                    else
+                        x = (joy_pos(1)-start_joy_pos) ./ controlspeed .* (rb-lb) + lb; % only right direction
+                    end
+                elseif strcmp(controller, 'mouse')
+                    [x,~,button] = GetMouse(theWindow);
+                end
+                
+                
+                if x < lb; x = lb; elseif x > rb; x = rb; end
+                
+                
+                if joy_button(1) || button(1); break; end
+                
+                DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 200, orange, [], [], [], 2);
+                
+                [lb, rb, start_center] = draw_scale(scale);
+                Screen('DrawLine', theWindow, orange, x, H/2, x, H/2+scale_W, 6);
+                Screen('Flip', theWindow);
+                
+                cur_t = GetSecs;
+                eval(['data.dat{run_i}{tr_i}.' scale '_time_fromstart(rec_i,1) = cur_t-start_t;']);
+                eval(['data.dat{run_i}{tr_i}.' scale '_cont_rating(rec_i,1) = (x-lb)./(rb-lb);']);
+                
+                if cur_t-start_t >= S.ratetime_cont
+                    break
+                end
+                
+            end
+            
+            end_t = GetSecs;
+            eval(['data.dat{run_i}{tr_i}.' scale '_rating = (x-lb)./(rb-lb);']);
+            eval(['data.dat{run_i}{tr_i}.' scale '_RT = end_t - start_t;']);
+            
+            
+            all_end_t = GetSecs;
+            eval(['data.dat{run_i}{tr_i}.continuous_total_RT = all_end_t - all_start_t;']);
+
         else % not continuous rating
             WaitSecs(S.dur);
-            if strcmp(S.type, 'PP')
+            if strcmp(S.type, 'PP') || strcmp(S.type, 'ODOR') 
                 eval(['fwrite(t, ''1,' PP_int{strcmp(lvs, S.int)} ',s'');']);
             end
         end
@@ -319,7 +769,97 @@ for run_i = run_start:run_num
         
         %% OVERALL RATING
         if ~isempty(S.overall_scale)
-            data = get_ratings(S.overall_scale, 'overall', controller, control_speed, run_i, tr_i, S.ratetime_overall, data);
+            
+            all_start_t = GetSecs;
+            eval(['data.dat{run_i}{tr_i}.overall_rating_timestamp = all_start_t;']);
+            
+            % Parse scales and basic setting
+            scale = S.overall_scale{1};
+            
+            [lb, rb, start_center] = draw_scale(scale); % Get information about scale.
+            Screen(theWindow,'FillRect',bgcolor, window_rect); % Just getting information, and do not show the scale.
+            
+            start_t = GetSecs;
+            eval(['data.dat{run_i}{tr_i}.' scale '_timestamp = start_t;']);
+            Screen(theWindow,'FillRect',bgcolor, window_rect);
+            Screen('Flip', theWindow);
+            
+            rec_i = 0;
+            ratetype = strcmp(rating_types.alltypes, scale);
+            joy_button(1) = 0;
+            button(1) = 0;
+            
+            % Initial position
+            if strcmp(controller, 'joy')
+                [joy_pos, joy_button] = mat_joy(0);
+                start_joy_pos = joy_pos(1); % getting initial poisition
+            elseif strcmp(controller, 'mouse')
+                if start_center
+                    SetMouse((rb+lb)/2,H/2); % set mouse at the center
+                else
+                    SetMouse(lb,H/2); % set mouse at the left
+                end
+            end
+            
+            % Get ratings
+            while true % Button
+                rec_i = rec_i+1;
+                
+                if strcmp(controller, 'joy')
+                    [joy_pos, joy_button] = mat_joy(0);
+                    %             if abs(start_joy_pos) > .1 % if start point is too deviated
+                    %                 start_joy_pos = joy_pos(1);
+                    %             end
+                    if start_center
+                        x = (joy_pos(1)-start_joy_pos) ./ controlspeed .* (rb-lb) + (rb+lb)/2; % both direction
+                    else
+                        x = (joy_pos(1)-start_joy_pos) ./ controlspeed .* (rb-lb) + lb; % only right direction
+                    end
+                elseif strcmp(controller, 'mouse')
+                    [x,~,button] = GetMouse(theWindow);
+                end
+                
+                
+                if x < lb; x = lb; elseif x > rb; x = rb; end
+                
+                
+                if joy_button(1) || button(1); break; end
+                
+                DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 200, white, [], [], [], 2);
+                
+                [lb, rb, start_center] = draw_scale(scale);
+                Screen('DrawLine', theWindow, orange, x, H/2, x, H/2+scale_W, 6);
+                Screen('Flip', theWindow);
+                
+                cur_t = GetSecs;
+                eval(['data.dat{run_i}{tr_i}.' scale '_time_fromstart(rec_i,1) = cur_t-start_t;']);
+                eval(['data.dat{run_i}{tr_i}.' scale '_cont_rating(rec_i,1) = (x-lb)./(rb-lb);']);
+                
+                if cur_t-start_t >= S.ratetime_overall - 0.5
+                    break
+                end
+                
+            end
+            
+            end_t = GetSecs;
+            eval(['data.dat{run_i}{tr_i}.' scale '_rating = (x-lb)./(rb-lb);']);
+            eval(['data.dat{run_i}{tr_i}.' scale '_RT = end_t - start_t;']);
+            
+            % Freeze the screen 0.5 second with red line if overall type
+            freeze_t = GetSecs;
+            while true
+                [lb, rb, start_center] = draw_scale(scale);
+                DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 200, white, [], [], [], 2);
+                Screen('DrawLine', theWindow, red, x, H/2, x, H/2+scale_W, 6);
+                Screen('Flip', theWindow);
+                freeze_cur_t = GetSecs;
+                if freeze_cur_t - freeze_t >= 0.5
+                    break
+                end
+            end
+            
+            all_end_t = GetSecs;
+            eval(['data.dat{run_i}{tr_i}.overall_total_RT = all_end_t - all_start_t;']);
         end
         
         %% INTER-TRIAL INTERVAL
@@ -338,7 +878,138 @@ for run_i = run_start:run_num
         
         %% POSTRUN QUESTIONNAIRES
         if tr_i == trial_num(run_i) && ~isempty(postrun_questions{run_i})
-            data = get_ratings(postrun_questions{run_i}, 'postrun', controller, control_speed, run_i, tr_i, S.ratetime_post, data);
+            
+            all_start_t = GetSecs;
+            eval(['data.dat{run_i}{tr_i}.postrun_rating_timestamp = all_start_t;']);
+            scales = postrun_questions{run_i};
+            
+            postrun_start_t = 2; % postrun start waiting time.
+            postrun_between_t = 2; % postrun questionnaire waiting time.
+            % '*' can be used as a wildcard.
+            if ~isempty(strfind(scales{1}, '*'))
+                scales = scales{1};
+                ast = strfind(scales, '*') - 1;
+                scales = rating_types.alltypes(strncmp(rating_types.alltypes, scales(1:ast), ast));
+            end
+            
+            % Going through each scale
+            for scale_i = 1:numel(scales)
+                
+                % (EXPLAIN or POSTRUN) First introduction
+                if scale_i == 1
+                    Screen(theWindow,'FillRect',bgcolor, window_rect);
+                    msgtxt = [num2str(run_i) '��° run�� �������ϴ�.\n��� �� ����� ���õ� ���Դϴ�. ���ںв����� ��ٷ��ֽñ� �ٶ�ϴ�.'];
+                    msgtxt = double(msgtxt); % korean to double
+                    DrawFormattedText(theWindow, msgtxt, 'center', 'center', white, [], [], [], 2);
+                    Screen('Flip', theWindow);
+                    
+                    WaitSecs(postrun_start_t);
+                end
+                
+                % Parse scales and basic setting
+                scale = scales{scale_i};
+                
+                [lb, rb, start_center] = draw_scale(scale); % Get information about scale.
+                Screen(theWindow,'FillRect',bgcolor, window_rect); % Just getting information, and do not show the scale.
+                
+                start_t = GetSecs;
+                eval(['data.dat{run_i}{tr_i}.' scale '_timestamp = start_t;']);
+                Screen(theWindow,'FillRect',bgcolor, window_rect);
+                Screen('Flip', theWindow);
+                
+                rec_i = 0;
+                ratetype = strcmp(rating_types.alltypes, scale);
+                joy_button(1) = 0;
+                button(1) = 0;
+                
+                
+                % Initial position
+                if strcmp(controller, 'joy')
+                    [joy_pos, joy_button] = mat_joy(0);
+                    start_joy_pos = joy_pos(1); % getting initial poisition
+                elseif strcmp(controller, 'mouse')
+                    if start_center
+                        SetMouse((rb+lb)/2,H/2); % set mouse at the center
+                    else
+                        SetMouse(lb,H/2); % set mouse at the left
+                    end
+                end
+                
+                % Get ratings
+                while true % Button
+                    rec_i = rec_i+1;
+                    
+                    if strcmp(controller, 'joy')
+                        [joy_pos, joy_button] = mat_joy(0);
+                        %             if abs(start_joy_pos) > .1 % if start point is too deviated
+                        %                 start_joy_pos = joy_pos(1);
+                        %             end
+                        if start_center
+                            x = (joy_pos(1)-start_joy_pos) ./ controlspeed .* (rb-lb) + (rb+lb)/2; % both direction
+                        else
+                            x = (joy_pos(1)-start_joy_pos) ./ controlspeed .* (rb-lb) + lb; % only right direction
+                        end
+                    elseif strcmp(controller, 'mouse')
+                        [x,~,button] = GetMouse(theWindow);
+                    end
+                    
+                    
+                    if x < lb; x = lb; elseif x > rb; x = rb; end
+                    
+                    
+                    if joy_button(1) || button(1); break; end
+                    
+                    DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 200, white, [], [], [], 2);
+                    
+                    [lb, rb, start_center] = draw_scale(scale);
+                    Screen('DrawLine', theWindow, orange, x, H/2, x, H/2+scale_W, 6);
+                    Screen('Flip', theWindow);
+                    
+                    cur_t = GetSecs;
+                    eval(['data.dat{run_i}{tr_i}.' scale '_time_fromstart(rec_i,1) = cur_t-start_t;']);
+                    eval(['data.dat{run_i}{tr_i}.' scale '_cont_rating(rec_i,1) = (x-lb)./(rb-lb);']);
+                    
+                    if cur_t-start_t >= S.ratetime_post - 0.5
+                        break
+                    end
+                    
+                end
+                
+                end_t = GetSecs;
+                eval(['data.dat{run_i}{tr_i}.' scale '_rating = (x-lb)./(rb-lb);']);
+                eval(['data.dat{run_i}{tr_i}.' scale '_RT = end_t - start_t;']);
+                
+                %% Freeze the screen 0.5 second with red line if overall type
+                freeze_t = GetSecs;
+                while true
+                    [lb, rb, start_center] = draw_scale(scale);
+                    DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 200, white, [], [], [], 2);
+                    Screen('DrawLine', theWindow, red, x, H/2, x, H/2+scale_W, 6);
+                    Screen('Flip', theWindow);
+                    freeze_cur_t = GetSecs;
+                    if freeze_cur_t - freeze_t > 0.5
+                        break
+                    end
+                end
+                
+                
+                % (EXPLAIN or POSTRUN) Move to next
+                Screen(theWindow,'FillRect',bgcolor, window_rect);
+                if scale_i ~= numel(scales)
+                    msgtxt = '���ϰ� ���� ���� ���� ���� ��ٸ��ñ� �ٶ�ϴ�.';
+                elseif scale_i == numel(scales)
+                    msgtxt = '���� �������ϴ�.';
+                end
+                msgtxt = double(msgtxt); % korean to double
+                DrawFormattedText(theWindow, msgtxt, 'center', 'center', white, [], [], [], 2);
+                Screen('Flip', theWindow);
+                
+                WaitSecs(postrun_between_t);
+                
+            end
+            
+            all_end_t = GetSecs;
+            eval(['data.dat{run_i}{tr_i}.postrun_total_RT = all_end_t - all_start_t;']);
         end
         save(data.datafile, '-append', 'data') % By this, if postrun questionnaire, the last trial will be saved after questionniare.
         
@@ -354,11 +1025,15 @@ for run_i = run_start:run_num
             break
         end
         
+        Screen(theWindow,'FillRect',bgcolor, window_rect);
         if run_i < run_num
-            display_message('endrun', run_i)
+            msgtxt = [num2str(run_i) '��° run�� �������ϴ�.\n���ڰ� ���� run���� ������ �غ� �Ϸ�Ǹ� �����ڴ� SPACE Ű�� �����ֽñ� �ٶ�ϴ�.'];
         else
-            display_message('endall', run_i)
+            msgtxt = 'session�� ��� �������ϴ�.\nsession�� ��ġ����, �����ڴ� SPACE Ű�� �����ֽñ� �ٶ�ϴ�.';
         end
+        msgtxt = double(msgtxt); % korean to double
+        DrawFormattedText(theWindow, msgtxt, 'center', 'center', white, [], [], [], 2);
+        Screen('Flip', theWindow);
         
     end
     

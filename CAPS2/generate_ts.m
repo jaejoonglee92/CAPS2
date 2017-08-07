@@ -1,16 +1,15 @@
 function [ts, post_q] = generate_ts
 
 % basic setting for paradigm
-run_num = 3;
-trial_num = repmat(3, run_num, 1); %21
-%{'QUIN'}; {'REST'};
-S1{1} = [{'REST'}, {'QUIN'}, {'CAPS'}];
-S1{2} = [{'LV0'}];
-S1{3} = [{'0003'}; repmat({'0003'}, 1, 1); {'0003'}]; %13 53 23, 19
+run_num = 1; %4
+trial_num = repmat(21, run_num, 1); %21
+S1{1} = [{'ODOR'}]; % {'REST'}, {'CAPS'}, {'QUIN'}, 
+S1{2} = [{'LV1'}];
+S1{3} = [{'0012'}; repmat({'0052'}, 19, 1); {'0022'}]; %12 52 22, 19
 S1{4} = [{'overall_avoidance'}];
 S1{5} = [{'0'}];
 S1{6} = [{'0'}];
-rate_to_stim = 7;
+rate_to_stim = 8; %7
 
 % run randomization
 %S1{1} = S1{1}(randperm(run_num)); % in this variable, we have to specify index in resizing section.
@@ -62,6 +61,10 @@ for i = 1:numel(S1{1})
             {'overall_resting_capsai_int', ...
             'overall_resting_capsai_unp'}];
     elseif strcmp(S1{1}{i}, 'QUIN')
+        post_q{i} = [post_q{i}, ...
+            {'overall_resting_bitter_int', ...
+            'overall_resting_bitter_unp'}];
+    elseif strcmp(S1{1}{i}, 'ODOR')
         post_q{i} = [post_q{i}, ...
             {'overall_resting_bitter_int', ...
             'overall_resting_bitter_unp'}];

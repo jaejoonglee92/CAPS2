@@ -6,7 +6,7 @@ if (libisloaded('labjackud') || (libisloaded('labjackud_doublePtr')))
     % Libraries already loaded
 else
     clear all;
-    header='C:\progra~1\LabJack\drivers\labjackud.h';
+    header='C:\Program Files (x86)\LabJack\Drivers\LabJackUD.h';
     loadlibrary('labjackud',header);
     loadlibrary labjackud labjackud_doublePtr.h alias labjackud_doublePtr
     

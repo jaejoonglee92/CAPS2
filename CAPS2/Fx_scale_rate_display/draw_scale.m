@@ -4,31 +4,8 @@ function [lb, rb, start_center] = draw_scale(scale)
 %identify whether this scale starts from center or not.
 %scale needs to be string(ex. 'line', 'overall_int', 'cont_avoidance', ...)
 
-global window_rect W H theWindow scale_W; % window property
-global white red orange bgcolor; % color
-global font fontsize
-global Exp_key Par_key Scan_key
-global t r; % pressure device udp channel
-global rating_types % dictionary for all rating types and matched prompts
-
-%% Scale parameter
-lb1 = W/4; % rating scale left bounds 1/4
-rb1 = (3*W)/4; % rating scale right bounds 3/4
-
-lb2 = W/3; % new bound for or not
-rb2 = (W*2)/3; 
-
-scale_W = (rb1-lb1).*0.1; % Height of the scale (10% of the width)
-
-anchor_lms = [0.014 0.061 0.172 0.354 0.533].*(rb1-lb1)+lb1;
-
-[~, ~, wordrect0, ~] = DrawFormattedText(theWindow, double(' '), lb1-30, H/2+scale_W+40, bgcolor);
-[~, ~, wordrect1, ~] = DrawFormattedText(theWindow, double('ì½”'), lb1-30, H/2+scale_W+40, bgcolor);
-[~, ~, wordrect2, ~] = DrawFormattedText(theWindow, double('p'), lb1-30, H/2+scale_W+40, bgcolor);
-[~, ~, wordrect3, ~] = DrawFormattedText(theWindow, double('^'), lb1-30, H/2+scale_W+40, bgcolor);
-[space.x space.y korean.x korean.y alpnum.x alpnum.y special.x special.y] = deal(wordrect0(3)-wordrect0(1), wordrect0(4)-wordrect0(2), ...
-    wordrect1(3)-wordrect1(1), wordrect1(4)-wordrect1(2), wordrect2(3)-wordrect2(1), wordrect2(4)-wordrect2(2), ...
-    wordrect3(3)-wordrect3(1), wordrect3(4)-wordrect3(2));
+global W H lb1 rb1 lb2 rb2 scale_W space korean alpnum special theWindow; % window property
+global white orange bgcolor; % color
 
 
 %% Default setting of variable parameter
@@ -43,30 +20,30 @@ switch scale
         
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€'), lb1-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìµœëŒ€'), rb1-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô'), lb1-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÃÖ´ë'), rb1-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'lms'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€'), lb1-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìµœëŒ€'), rb1-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô'), lb1-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÃÖ´ë'), rb1-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         for i = 1:5
             Screen('DrawLine', theWindow, 0, anchor_lms(i), H/2+scale_W, anchor_lms(i), H/2, 2);
         end
-        DrawFormattedText_CAPS(theWindow, double('ê±°ì˜\nì—†ëŠ”'), anchor_lms(1)-korean.x-10, H/2-korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ì•½í•œ'), anchor_lms(2)-korean.x+10, H/2-korean.y/2, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë³´í†µ'), anchor_lms(3)-korean.x, H/2-korean.y/2, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ê°•í•œ'), anchor_lms(4)-korean.x, H/2-korean.y/2, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš°\nê°•í•œ'), anchor_lms(5)-korean.x, H/2-korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('°ÅÀÇ\n¾ø´Â'), anchor_lms(1)-korean.x-10, H/2-korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¾àÇÑ'), anchor_lms(2)-korean.x+10, H/2-korean.y/2, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('º¸Åë'), anchor_lms(3)-korean.x, H/2-korean.y/2, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('°­ÇÑ'), anchor_lms(4)-korean.x, H/2-korean.y/2, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì\n°­ÇÑ'), anchor_lms(5)-korean.x, H/2-korean.y, white, [], [], [], 0, 1);
         
     case 'overall_int'
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ëŠê»´ì§€ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n   ê°€ì¥ ì‹¬í•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ´À²¸ÁöÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n   °¡Àå ½ÉÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_int_numel'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
@@ -82,40 +59,40 @@ switch scale
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ í”¼í• \ní•„ìš” ì—†ìŒ'), lb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double(' ì ˆëŒ€ë¡œ ë‹¤ì‹œ\nê²½í—˜í•˜ê³  ì‹¶ì§€\n      ì•ŠìŒ'), rb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ÇÇÇÒ\nÇÊ¿ä ¾øÀ½'), lb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double(' Àı´ë·Î ´Ù½Ã\n°æÇèÇÏ°í ½ÍÁö\n      ¾ÊÀ½'), rb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_unpleasant'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ë¶ˆì¾Œí•˜ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n  ê°€ì¥ ë¶ˆì¾Œí•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ºÒÄèÇÏÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n  °¡Àå ºÒÄèÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'cont_int'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/6+scale_W; rb1 H/6+scale_W; rb1 H/6];
         Screen(theWindow, 'FillPoly', orange, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ëŠê»´ì§€ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/6+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n   ê°€ì¥ ì‹¬í•œ'), rb1-korean.x*3-space.x, H/6+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ´À²¸ÁöÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/6+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n   °¡Àå ½ÉÇÑ'), rb1-korean.x*3-space.x, H/6+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'cont_avoidance'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/6+scale_W; rb1 H/6+scale_W; rb1 H/6];
         Screen(theWindow, 'FillPoly', orange, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ í”¼í• \ní•„ìš” ì—†ìŒ'), lb1-korean.x*2-space.x/2, H/6+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double(' ì ˆëŒ€ë¡œ ë‹¤ì‹œ\nê²½í—˜í•˜ê³  ì‹¶ì§€\n      ì•ŠìŒ'), rb1-korean.x*3-space.x/2, H/6+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ÇÇÇÒ\nÇÊ¿ä ¾øÀ½'), lb1-korean.x*2-space.x/2, H/6+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double(' Àı´ë·Î ´Ù½Ã\n°æÇèÇÏ°í ½ÍÁö\n      ¾ÊÀ½'), rb1-korean.x*3-space.x/2, H/6+scale_W+korean.y, white, [], [], [], 0, 1);
     
     case 'cont_avoidance_exp'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', orange, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ í”¼í• \ní•„ìš” ì—†ìŒ'), lb1-korean.x*2-space.x/2, H/6+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double(' ì ˆëŒ€ë¡œ ë‹¤ì‹œ\nê²½í—˜í•˜ê³  ì‹¶ì§€\n      ì•ŠìŒ'), rb1-korean.x*3-space.x/2, H/6+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ÇÇÇÒ\nÇÊ¿ä ¾øÀ½'), lb1-korean.x*2-space.x/2, H/6+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double(' Àı´ë·Î ´Ù½Ã\n°æÇèÇÏ°í ½ÍÁö\n      ¾ÊÀ½'), rb1-korean.x*3-space.x/2, H/6+scale_W+korean.y, white, [], [], [], 0, 1);
  
     case 'overall_aversive_ornot'
         drawclass = 2;
@@ -130,8 +107,8 @@ switch scale
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
         Screen(theWindow,'DrawLines', xy2, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ì˜ˆ'), (lb2+lb2_middle)/2-korean.x/2,  H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ì•„ë‹ˆì˜¤'), (rb2+rb2_middle)/2-korean.x*3/2,  H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¿¹'), (lb2+lb2_middle)/2-korean.x/2,  H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¾Æ´Ï¿À'), (rb2+rb2_middle)/2-korean.x*3/2,  H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_pain_ornot'
         drawclass = 2;
@@ -146,16 +123,16 @@ switch scale
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
         Screen(theWindow,'DrawLines', xy2, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ì˜ˆ'), (lb2+lb2_middle)/2-korean.x/2,  H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ì•„ë‹ˆì˜¤'), (rb2+rb2_middle)/2-korean.x*3/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¿¹'), (lb2+lb2_middle)/2-korean.x/2,  H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¾Æ´Ï¿À'), (rb2+rb2_middle)/2-korean.x*3/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_boredness'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ì§€ê²¹ì§€\n     ì•ŠìŒ'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ì§€ê²¨ì›€'), rb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô Áö°ãÁö\n     ¾ÊÀ½'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì Áö°Ü¿ò'), rb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_alertness'
         start_center = true;
@@ -164,9 +141,9 @@ switch scale
         xy = [lb1 lb1 lb1 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ì¡¸ë¦¼'), lb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ì¤‘ê°„'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ë˜ë ·'), rb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì Á¹¸²'), lb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('Áß°£'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ¶Ç·Ç'), rb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_relaxed'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
@@ -174,8 +151,8 @@ switch scale
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ë¶ˆí¸í•¨'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° í¸í•¨'), rb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ºÒÆíÇÔ'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ÆíÇÔ'), rb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_attention'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
@@ -183,8 +160,8 @@ switch scale
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ì§‘ì¤‘ë˜ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ì§‘ì¤‘\n   ì˜ ë¨'), rb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ÁıÁßµÇÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ÁıÁß\n   Àß µÊ'), rb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_positive'
         start_center = true;
@@ -193,9 +170,9 @@ switch scale
         xy = [lb1 lb1 lb1 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ê·¸ë ‡ì§€\n     ì•Šë‹¤'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ì¤‘ê°„'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ê·¸ë ‡ë‹¤'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ±×·¸Áö\n     ¾Ê´Ù'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('Áß°£'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ±×·¸´Ù'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_negative'
         start_center = true;
@@ -204,9 +181,9 @@ switch scale
         xy = [lb1 lb1 lb1 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ê·¸ë ‡ì§€\n     ì•Šë‹¤'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ì¤‘ê°„'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ê·¸ë ‡ë‹¤'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ±×·¸Áö\n     ¾Ê´Ù'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('Áß°£'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ±×·¸´Ù'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_myself'
         start_center = true;
@@ -215,9 +192,9 @@ switch scale
         xy = [lb1 lb1 lb1 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ê·¸ë ‡ì§€\n     ì•Šë‹¤'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ì¤‘ê°„'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ê·¸ë ‡ë‹¤'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ±×·¸Áö\n     ¾Ê´Ù'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('Áß°£'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ±×·¸´Ù'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_others'
         start_center = true;
@@ -226,9 +203,9 @@ switch scale
         xy = [lb1 lb1 lb1 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ê·¸ë ‡ì§€\n     ì•Šë‹¤'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ì¤‘ê°„'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ê·¸ë ‡ë‹¤'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ±×·¸Áö\n     ¾Ê´Ù'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('Áß°£'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ±×·¸´Ù'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_imagery'
         start_center = true;
@@ -237,9 +214,9 @@ switch scale
         xy = [lb1 lb1 lb1 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ê·¸ë ‡ì§€\n     ì•Šë‹¤'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ì¤‘ê°„'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ê·¸ë ‡ë‹¤'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ±×·¸Áö\n     ¾Ê´Ù'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('Áß°£'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ±×·¸´Ù'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_present'
         start_center = true;
@@ -248,9 +225,9 @@ switch scale
         xy = [lb1 lb1 lb1 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ê·¸ë ‡ì§€\n     ì•Šë‹¤'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ì¤‘ê°„'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ê·¸ë ‡ë‹¤'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ±×·¸Áö\n     ¾Ê´Ù'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('Áß°£'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ±×·¸´Ù'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_past'
         start_center = true;
@@ -259,9 +236,9 @@ switch scale
         xy = [lb1 lb1 lb1 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ê·¸ë ‡ì§€\n     ì•Šë‹¤'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ì¤‘ê°„'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ê·¸ë ‡ë‹¤'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ±×·¸Áö\n     ¾Ê´Ù'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('Áß°£'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ±×·¸´Ù'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_future'
         start_center = true;
@@ -270,121 +247,121 @@ switch scale
         xy = [lb1 lb1 lb1 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ê·¸ë ‡ì§€\n     ì•Šë‹¤'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ì¤‘ê°„'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ê·¸ë ‡ë‹¤'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ±×·¸Áö\n     ¾Ê´Ù'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('Áß°£'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ±×·¸´Ù'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_bitter_int'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ëŠê»´ì§€ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n   ê°€ì¥ ì‹¬í•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ´À²¸ÁöÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n   °¡Àå ½ÉÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_bitter_unp'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ë¶ˆì¾Œí•˜ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n  ê°€ì¥ ë¶ˆì¾Œí•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ºÒÄèÇÏÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n  °¡Àå ºÒÄèÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_capsai_int'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ëŠê»´ì§€ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n   ê°€ì¥ ì‹¬í•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ´À²¸ÁöÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n   °¡Àå ½ÉÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_capsai_unp'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ë¶ˆì¾Œí•˜ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n  ê°€ì¥ ë¶ˆì¾Œí•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ºÒÄèÇÏÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n  °¡Àå ºÒÄèÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_thermal_int'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ëŠê»´ì§€ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n   ê°€ì¥ ì‹¬í•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ´À²¸ÁöÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n   °¡Àå ½ÉÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_thermal_unp'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ë¶ˆì¾Œí•˜ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n  ê°€ì¥ ë¶ˆì¾Œí•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ºÒÄèÇÏÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n  °¡Àå ºÒÄèÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_pressure_int'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ëŠê»´ì§€ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n   ê°€ì¥ ì‹¬í•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ´À²¸ÁöÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n   °¡Àå ½ÉÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_pressure_unp'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ë¶ˆì¾Œí•˜ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n  ê°€ì¥ ë¶ˆì¾Œí•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ºÒÄèÇÏÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n  °¡Àå ºÒÄèÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_negvis_int'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ëŠê»´ì§€ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n   ê°€ì¥ ì‹¬í•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ´À²¸ÁöÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n   °¡Àå ½ÉÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_negvis_unp'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ë¶ˆì¾Œí•˜ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n  ê°€ì¥ ë¶ˆì¾Œí•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ºÒÄèÇÏÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n  °¡Àå ºÒÄèÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_negaud_int'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ëŠê»´ì§€ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n   ê°€ì¥ ì‹¬í•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ´À²¸ÁöÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n   °¡Àå ½ÉÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_negaud_unp'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ë¶ˆì¾Œí•˜ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n  ê°€ì¥ ë¶ˆì¾Œí•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ºÒÄèÇÏÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n  °¡Àå ºÒÄèÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_posvis_int'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ëŠê»´ì§€ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\n   ê°€ì¥ ì‹¬í•œ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ´À²¸ÁöÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n   °¡Àå ½ÉÇÑ'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_posvis_ple'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
         Screen(theWindow, 'FillPoly', 255, xy);
-        DrawFormattedText_CAPS(theWindow, double('ì „í˜€ ë¶ˆì¾Œí•˜ì§€\n      ì•ŠìŒ'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ìƒìƒí•  ìˆ˜ ìˆëŠ”\nê°€ì¥ ê¸°ë¶„ ì¢‹ì€'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('ÀüÇô ºÒÄèÇÏÁö\n      ¾ÊÀ½'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('»ó»óÇÒ ¼ö ÀÖ´Â\n°¡Àå ±âºĞ ÁÁÀº'), rb1-korean.x*3-space.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_comfortness'
         eval(['lb = lb' num2str(drawclass) ';']); eval(['rb = rb' num2str(drawclass) ';']);
@@ -392,8 +369,8 @@ switch scale
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ë¶ˆí¸í•¨'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° í¸í•¨'), rb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ºÒÆíÇÔ'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ÆíÇÔ'), rb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_mood'
         start_center = true;
@@ -402,12 +379,13 @@ switch scale
         xy = [lb1 lb1 lb1 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ë¶€ì •ì '), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ì¤‘ê°„'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('ë§¤ìš° ê¸ì •ì '), rb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ºÎÁ¤Àû'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('Áß°£'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('¸Å¿ì ±àÁ¤Àû'), rb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
            
 end
 
 end
+
 
