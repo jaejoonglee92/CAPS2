@@ -10,7 +10,20 @@ LJ_ctUSB = 1;
 LJ_ioPIN_CONFIGURATION_RESET = 2017; % U3
 LJ_ioPUT_DIGITAL_BIT = 40; % UE9 + U3
 
-ljud_LoadDriver; % Loads LabJack UD Function Library
+% Call ljud_LoadDriver from the command window or any mfile to load the
+% LabJack driver. This needs to be done at the beginning of any file or
+% before you can make any other calls to your LabJack.
+
+if (libisloaded('labjackud') || (libisloaded('labjackud_doublePtr')))
+    % Libraries already loaded
+else
+    %clear all;
+    header='C:\Program Files (x86)\LabJack\Drivers\LabJackUD.h';
+    loadlibrary('labjackud',header);
+    loadlibrary labjackud labjackud_doublePtr.h alias labjackud_doublePtr
+end
+
+%ljud_LoadDriver; % Loads LabJack UD Function Library
 %ljud_Constants; % Loads LabJack UD constant file
 [Error ljHandle] = ljud_OpenLabJack(LJ_dtU3,LJ_ctUSB,'1',1); % Returns ljHandle for open LabJack
 Error_Message(Error) % Check for and display any Errros
