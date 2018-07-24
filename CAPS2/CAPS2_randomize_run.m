@@ -5,4 +5,4 @@ runs = runs(perms(1:4));
 runs = runs(randperm(size(runs, 1)), :);
 subjmarker = 1;
 runmarker = 1;
-save('CAPS2_randomized_run_data_v1.mat', 'runs', 'subjmarker', 'runmarker');
+save('CAPS2_randomized_run_data_v3.mat', 'runs', 'subjmarker', 'runmarker');

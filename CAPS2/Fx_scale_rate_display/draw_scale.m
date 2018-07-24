@@ -77,10 +77,10 @@ switch scale
     case 'cont_avoidance_exp'
         
         xy = [lb1 H/2+scale_W; rb1 H/2+scale_W; rb1 H/2];
-        Screen(theWindow, 'FillPoly', orange, xy);
-        DrawFormattedText_CAPS(theWindow, double('전혀 피할\n필요 없음'), lb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double(' 절대로 다시\n경험하고 싶지\n      않음'), rb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
- 
+        Screen(theWindow, 'FillPoly', white, xy);
+        DrawFormattedText_CAPS(theWindow, double('전혀'), lb1-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        DrawFormattedText_CAPS(theWindow, double('최대'), rb1-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+        
     case 'overall_aversive_ornot'
         start_center = true;
         lb = lb2;
@@ -114,31 +114,36 @@ switch scale
         DrawFormattedText_CAPS(theWindow, double('아니오'), (rb2+rb2_middle)/2-korean.x*3/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_boredness'
+        start_center = true;
         
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
         DrawFormattedText_CAPS(theWindow, double('전혀 지겹지\n     않음'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         DrawFormattedText_CAPS(theWindow, double('매우 지겨움'), rb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+
         
     case 'overall_alertness'
         start_center = true;
         
-        xy = [lb1 lb1 lb1 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 (lb1+rb1)/2 rb1 rb1 rb1; ...
-            H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
+        xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
+            H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
         DrawFormattedText_CAPS(theWindow, double('매우 졸림'), lb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
-        DrawFormattedText_CAPS(theWindow, double('중간'), (lb1+rb1)/2-korean.x, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         DrawFormattedText_CAPS(theWindow, double('매우 또렷'), rb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+
         
     case 'overall_relaxed'
+        start_center = true;
         
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
         DrawFormattedText_CAPS(theWindow, double('매우 불편함'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         DrawFormattedText_CAPS(theWindow, double('매우 편함'), rb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+
         
     case 'overall_attention'
+        start_center = true;
         
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
@@ -146,15 +151,19 @@ switch scale
         DrawFormattedText_CAPS(theWindow, double('전혀 집중되지\n      않음'), lb1-korean.x*3-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         DrawFormattedText_CAPS(theWindow, double('매우 집중\n   잘 됨'), rb1-korean.x*2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
+        
     case 'overall_resting_positive'
+        start_center = true;
         
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
         Screen(theWindow,'DrawLines', xy, 5, 255);
         DrawFormattedText_CAPS(theWindow, double('전혀 그렇지\n     않다'), lb1-korean.x*5/2-space.x/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         DrawFormattedText_CAPS(theWindow, double('매우 그렇다'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
+
         
     case 'overall_resting_negative'
+        start_center = true;
         
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
@@ -163,6 +172,7 @@ switch scale
         DrawFormattedText_CAPS(theWindow, double('매우 그렇다'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_myself'
+        start_center = true;
         
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
@@ -171,6 +181,7 @@ switch scale
         DrawFormattedText_CAPS(theWindow, double('매우 그렇다'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_others'
+        start_center = true;
         
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
@@ -179,6 +190,7 @@ switch scale
         DrawFormattedText_CAPS(theWindow, double('매우 그렇다'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_imagery'
+        start_center = true;
         
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
@@ -187,6 +199,7 @@ switch scale
         DrawFormattedText_CAPS(theWindow, double('매우 그렇다'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_present'
+        start_center = true;
         
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
@@ -195,6 +208,7 @@ switch scale
         DrawFormattedText_CAPS(theWindow, double('매우 그렇다'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_past'
+        start_center = true;
         
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];
@@ -203,6 +217,7 @@ switch scale
         DrawFormattedText_CAPS(theWindow, double('매우 그렇다'), rb1-korean.x*5/2, H/2+scale_W+korean.y, white, [], [], [], 0, 1);
         
     case 'overall_resting_future'
+        start_center = true;
         
         xy = [lb1 lb1 lb1 rb1 rb1 rb1; ...
             H/2 H/2+scale_W H/2+scale_W/2 H/2+scale_W/2 H/2 H/2+scale_W];

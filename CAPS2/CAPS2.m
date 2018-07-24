@@ -7,11 +7,14 @@ global theWindow lb1 rb1 lb2 rb2 H W scale_W anchor_lms space korean alpnum spec
 basedir = pwd;
 cd(basedir); addpath(genpath(basedir));
 
+
+
 USE_BIOPAC = true;
 show_cursor = false;%true;
 screen_mode = 'full';
+
 set_input = false;
-exp_scale = {'cont_avoidance_exp', 'overall_avoidance'};
+exp_scale = {'cont_avoidance_exp', 'overall_alertness'};
 main_scale = {'cont_avoidance_exp'};
 
 
@@ -27,7 +30,7 @@ subjrun = input('\nRun number? ');
 
 %% SETUP : Load randomized run data and Compare the markers
 
-rundatdir = fullfile(basedir, 'CAPS2_randomized_run_data_v1.mat');
+rundatdir = fullfile(basedir, 'CAPS2_randomized_run_data_v3.mat');
 load(rundatdir, 'runs', 'subjmarker', 'runmarker');
 
 if subjmarker ~= subjnum
@@ -72,7 +75,7 @@ subjtime = sprintf('%.2d%.2d%.2d', nowtime(1), nowtime(2), nowtime(3));
 data.subject = subjID;
 data.datafile = fullfile(savedir, [subjtime, '_', subjID, '_subj', sprintf('%.3d', subjnum), ...
     '_r', sprintf('%.2d', subjrun), '.mat']);
-data.version = 'CAPS2_v1_08-14-2017_Cocoanlab';
+data.version = 'CAPS2_v3_12-10-2017_Cocoanlab';
 data.starttime = datestr(clock, 0);
 data.starttime_getsecs = GetSecs;
 
@@ -83,27 +86,27 @@ save(data.datafile, 'data');
 
 S.type = runs{subjnum, subjrun};
 S.dur = 20*60 - 10; % 20 mins - 10 secs for disdaq
-%S.dur = 30;
-if strcmp(S.type, 'ODOR')
-    S.odordur = 5 * 60; % 5 mins
-    %S.odordur = 10;
-    S.airdur = S.dur - S.odordur; % residual (almost 15 mins)
-end
+%S.dur = 5*60 - 10;
     
 S.stimtext = '+';
-S.int = '0001';
+
+S.changecolor = [10:60:S.dur];%[3:5:S.dur];
+changecolor_jitter = randi(10, 1, numel(S.changecolor));
+S.changecolor = S.changecolor + changecolor_jitter;
+S.changetime = 1; % 1 sec
 
 data.dat.type = S.type;
 data.dat.duration = S.dur;
 data.dat.stimtext = S.stimtext;
-data.dat.int = str2double(S.int);
 data.dat.exp_scale = exp_scale;
 data.dat.main_scale = main_scale;
+data.dat.changecolor = S.changecolor;
+data.dat.changetime = S.changetime;
 
 rating_types = call_ratingtypes;
 
 postrun_start_t = 2; % postrun start waiting time.
-postrun_between_t = 2; % postrun questionnaire waiting time.
+postrun_end_t = 2; % postrun questionnaire waiting time.
 
 
 %% SETUP : BIOPAC
@@ -112,48 +115,6 @@ if USE_BIOPAC
     channel_n = 1;
     biopac_channel = 0;
     ljHandle = BIOPAC_setup(channel_n);
-end
-
-
-%% SETUP : MASTER-9 and PPD for ODOR run
-
-if strcmp(S.type, 'ODOR')
-    
-    % PPD
-    [t, r] = pressure_pain_setup;
-    
-    % MASTER-9
-    cmOff = 0;
-    cmFree = 1;
-    cmTrain = 2;
-    cmTrig = 3;
-    cmDC = 4;
-    cmGate = 5;
-    cmTwin=6;
-    csMonopolar=0;
-    csBipolar=1;
-    csRamp=2;
-    
-    Master9 = actxserver('AmpiLib.Master9'); %Create COM Automation server
-    
-    if ~(Master9.Connect)
-        h=errordlg('Can''t connect to Master9!','Error');
-        uiwait(h);
-        delete(Master9); %Close COM
-        return;
-    end
-    
-    Master9.ChangeParadigm(1);            %switch to paradigm #1
-    Master9.ClearParadigm;                %clear present paradigm
-    
-    Master9.ChangeChannelMode(1, cmTrig);
-    Master9.SetChannelDuration(1, S.odordur);
-    Master9.SetChannelDelay(1, 0);
-    
-    Master9.ChangeChannelMode(2, cmTrig);
-    Master9.SetChannelDuration(2, S.airdur);
-    Master9.SetChannelDelay(2, S.odordur);
-    
 end
 
 
@@ -313,14 +274,92 @@ if subjrun == 1
         SetMouse(lb,H/2); % set mouse at the left
     end
     
-    % Get ratings
-    while true % Button
+    % Get ratings (Space 1)
+    while true % Space
         
         [x,~,button] = GetMouse(theWindow);
+        [~,~,keyCode_E] = KbCheck(Exp_key);
         
         [lb, rb, start_center] = draw_scale(exp_scale{1});
         
         if x < lb; x = lb; elseif x > rb; x = rb; end
+        
+        DrawFormattedText(theWindow, rating_types.prompts_ex{3}, 'center', 100, orange, [], [], [], 2);
+        DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 300, white, [], [], [], 2);
+        
+        if keyCode_E(KbName('space'))
+            while keyCode_E(KbName('space'))
+                [~,~,keyCode_E] = KbCheck(Exp_key);
+            end
+            break
+        end
+        
+        Screen('DrawLine', theWindow, orange, x, H/2, x, H/2+scale_W, 6);
+        Screen('Flip', theWindow);
+        
+    end
+    
+    Screen('DrawLine', theWindow, red, x, H/2, x, H/2+scale_W, 6);
+    Screen('Flip', theWindow);
+    
+    start_t = GetSecs;
+    while true
+        cur_t = GetSecs;
+        if cur_t - start_t >= S.changetime
+            break
+        end
+    end
+    
+    % Get ratings (Space 2)
+    while true % Space
+        
+        [x,~,button] = GetMouse(theWindow);
+        [~,~,keyCode_E] = KbCheck(Exp_key);
+        
+        [lb, rb, start_center] = draw_scale(exp_scale{1});
+        
+        if x < lb; x = lb; elseif x > rb; x = rb; end
+        
+        DrawFormattedText(theWindow, rating_types.prompts_ex{3}, 'center', 100, orange, [], [], [], 2);
+        DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 300, white, [], [], [], 2);
+        
+        if keyCode_E(KbName('space'))
+            while keyCode_E(KbName('space'))
+                [~,~,keyCode_E] = KbCheck(Exp_key);
+            end
+            break
+        end
+        
+        Screen('DrawLine', theWindow, orange, x, H/2, x, H/2+scale_W, 6);
+        Screen('Flip', theWindow);
+        
+    end
+    
+    Screen('DrawLine', theWindow, red, x, H/2, x, H/2+scale_W, 6);
+    Screen('Flip', theWindow);
+    
+    start_t = GetSecs;
+    while true
+        cur_t = GetSecs;
+        if cur_t - start_t >= S.changetime
+            break
+        end
+    end
+    
+    % Get ratings(Button)
+    while true % Button
+        
+        [x,~,button] = GetMouse(theWindow);
+        [~,~,keyCode_E] = KbCheck(Exp_key);
+        
+        if x < lb; x = lb; elseif x > rb; x = rb; end
+        
+        [lb, rb, start_center] = draw_scale(exp_scale{1});
+        DrawFormattedText(theWindow, rating_types.prompts_ex{3}, 'center', 100, orange, [], [], [], 2);
+        DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 300, white, [], [], [], 2);
+        
+        Screen('DrawLine', theWindow, orange, x, H/2, x, H/2+scale_W, 6);
+        Screen('Flip', theWindow);
         
         if button(1)
             while button(1)
@@ -329,14 +368,8 @@ if subjrun == 1
             break
         end
         
-        DrawFormattedText(theWindow, rating_types.prompts_ex{3}, 'center', 100, orange, [], [], [], 2);
-        DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 300, white, [], [], [], 2);
-        
-        Screen('DrawLine', theWindow, white, x, H/2, x, H/2+scale_W, 6);
-        Screen('Flip', theWindow);
-        
-        
     end
+    
     
     % Move to the next
     while true % Button
@@ -428,6 +461,7 @@ if subjrun == 1
         
         [lb, rb, start_center] = draw_scale(exp_scale{2});
         
+        DrawFormattedText(theWindow, rating_types.prompts_ex{3}, 'center', 100, orange, [], [], [], 2);
         DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 300, white, [], [], [], 2);
         
         Screen('DrawLine', theWindow, red, x, H/2, x, H/2+scale_W, 6);
@@ -622,17 +656,6 @@ end
 start_t = GetSecs;
 data.dat.stim_timestamp = start_t;
 
-if strcmp(S.type, 'ODOR')
-    
-    % PPD
-    fwrite(t, ['1, ' S.int ', t']);
-    
-    % Master-9
-    Master9.Trigger(1);
-    Master9.Trigger(2);
-    
-end
-
 % Basic setting
 rec_i = 0;
 ratetype = strcmp(rating_types.alltypes, main_scale{1});
@@ -646,6 +669,7 @@ if start_center
 else
     SetMouse(lb,H/2); % set mouse at the left
 end
+
 
 % Get ratings
 while true % Button
@@ -666,18 +690,22 @@ while true % Button
     
     DrawFormattedText(theWindow, rating_types.prompts{ratetype}, 'center', 200, orange, [], [], [], 2);
     
-    Screen('DrawLine', theWindow, white, x, H/2, x, H/2+scale_W, 6);
+    if any(S.changecolor <= cur_t - start_t & cur_t - start_t <= S.changecolor + S.changetime) % It takes 1 sec from the S.changecolor
+        Screen('DrawLine', theWindow, red, x, H/2, x, H/2+scale_W, 6);
+        data.dat.changecolor_stim(rec_i,1) = 1;
+    else
+        Screen('DrawLine', theWindow, orange, x, H/2, x, H/2+scale_W, 6);
+        data.dat.changecolor_stim(rec_i,1) = 0;
+    end
     Screen('Flip', theWindow);
     
     
     cur_t = GetSecs;
     data.dat.time_fromstart(rec_i,1) = cur_t-start_t;
     data.dat.cont_rating(rec_i,1) = (x-lb)./(rb-lb);
+    data.dat.changecolor_response(rec_i,1) = button(1);
     
     if cur_t - start_t >= S.dur
-        if strcmp(S.type, 'ODOR')
-            fwrite(t, ['1, ' S.int ', s']);
-        end
         break
     end
     
@@ -685,6 +713,10 @@ end
 
 data.dat.total_dur_recorded = GetSecs - start_t;
 
+if USE_BIOPAC
+    BIOPAC_trigger(ljHandle, biopac_channel, 'on');
+    BIOPAC_trigger(ljHandle, biopac_channel, 'off');
+end
 
 %% MAIN : Postrun questionnaire
 
@@ -783,21 +815,37 @@ for scale_i = 1:numel(scales)
     
     
     % Move to the next
-    if scale_i ~= numel(scales)
-        msgtxt = '편하게 손을 놓고 다음 질문을 기다리시기 바랍니다.';
-    elseif scale_i == numel(scales)
-        msgtxt = '질문이 끝났습니다.';
-    end
-    msgtxt = double(msgtxt); % korean to double
-    DrawFormattedText(theWindow, msgtxt, 'center', 'center', white, [], [], [], 2);
-    Screen('Flip', theWindow);
+    %     if scale_i ~= numel(scales)
+    %         msgtxt = '편하게 손을 놓고 다음 질문을 기다리시기 바랍니다.';
+    %     elseif scale_i == numel(scales)
+    %         msgtxt = '질문이 끝났습니다.';
+    %     end
+    %     msgtxt = double(msgtxt); % korean to double
+    %     DrawFormattedText(theWindow, msgtxt, 'center', 'center', white, [], [], [], 2);
+    %     Screen('Flip', theWindow);
+    %
+    %     start_t = GetSecs;
+    %     while true
+    %         cur_t = GetSecs;
+    %         if cur_t - start_t >= postrun_between_t
+    %             break
+    %         end
+    %     end
     
-    start_t = GetSecs;
-    while true
-        cur_t = GetSecs;
-        if cur_t - start_t >= postrun_between_t
-            break
+    if scale_i == numel(scales)
+        msgtxt = '질문이 끝났습니다.';
+        msgtxt = double(msgtxt); % korean to double
+        DrawFormattedText(theWindow, msgtxt, 'center', 'center', white, [], [], [], 2);
+        Screen('Flip', theWindow);
+        
+        start_t = GetSecs;
+        while true
+            cur_t = GetSecs;
+            if cur_t - start_t >= postrun_end_t
+                break
+            end
         end
+        
     end
     
 end
@@ -834,8 +882,6 @@ end
 
 Screen('CloseAll');
 
-if exist('t', 'var') && ~isempty(t); fclose(t); end
-if exist('r', 'var') && ~isempty(r); fclose(r); end
 
 %% Update markers and finish experiment
 
